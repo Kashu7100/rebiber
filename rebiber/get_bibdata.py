@@ -120,7 +120,3 @@ if __name__ == "__main__":
         with open('bib_list.txt', 'a') as f:
             f.write(f"data/{name}.bib.json\n")
     print("[*] done")
-
-    # bib_list = get_bib_list('https://dblp.org/db/conf/cvpr/cvprw2021.html')
-    # save_bib_list(bib_list, 'cvprw', '2021')
-
