@@ -158,7 +158,13 @@ python bib2json.py -i data/aaai2020.bib -o data/aaai2020.json
 
 ## Adding a new conference
 
-You can manually add any conferences from DBLP by downloading their bib files to our `raw_data` folder, and run a prepared script `add_conf.sh`.
+Bibliography data of a conference in DBLP can be added to our `data` folder automatically.
+
+```bash
+python get_bibdata.py -conf cvpr --year 2020
+```
+
+Or, you can manually add any conferences from DBLP by downloading their bib files to our `raw_data` folder, and run a prepared script `add_conf.sh`.
 
 Take ICLR2020 and ICLR2019 as an example:
 
