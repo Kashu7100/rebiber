@@ -2,13 +2,28 @@
 # https://dblp.org/rec/conf/cvpr/KlingnerBMF21.bib?param=1
 
 import requests
-from requests.exceptions import HTTPError
 from bs4 import BeautifulSoup
 import argparse
 import os
+from requests.sessions import Session
+import time
+from concurrent.futures import ThreadPoolExecutor
+from threading import local
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+
+retry_strategy = Retry(
+    total=5,
+    backoff_factor=2,
+    status_forcelist=[429, 500, 502, 503, 504],
+    method_whitelist=["GET",]
+)
+adapter = HTTPAdapter(max_retries=retry_strategy)
 
 
 BASE_URL = "https://dblp.org/db/conf/{}/index.html"
+thread_local = local()
 
 
 def get_conf_list(conf_name):
@@ -45,17 +60,40 @@ def get_bib_list(conf_url):
             if "bibtex" in link.get('href'):
                 tmp = link.get('href')
                 print(tmp)
-                response = requests.get(tmp.split('.html')[0] + '.bib?param=1')
-                bib_list.append(response.content)
+                bib_list.append(tmp.split('.html')[0] + '.bib?param=1')
                 itr += 1
     print(f"[*] retrieved {itr} items")
+    download_all(bib_list)
     return bib_list
 
 
-def save_bib_list(bib_list, conf_name):
-    with open('raw_data/' + conf_name + '.bib', 'w') as f:
-        for bib in bib_list:
-            f.write(bib.decode("utf-8"))
+def get_session() -> Session:
+    if not hasattr(thread_local,'session'):
+        thread_local.session = requests.Session()
+    return thread_local.session
+
+
+def download_link(url:str):
+    session = get_session()
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    with session.get(url) as response:
+        if response.status_code == 200:
+            with open('raw_data/' + 'tmp.bib', 'a') as f:
+                f.write(response.content.decode("utf-8"))
+            time.sleep(0.1)
+        else:
+            print(f"[*] {url} failed with status code: {response.status_code}")
+
+
+def download_all(url_list) -> None:
+    print("[*] downloading bibtex files")
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        executor.map(download_link, url_list)
+
+
+def save_bib_list(conf_name):
+    os.rename('raw_data/' + 'tmp.bib', 'raw_data/' + conf_name + '.bib')
 
 
 if __name__ == "__main__":
@@ -76,8 +114,8 @@ if __name__ == "__main__":
 
     for name, url in urls.items():
         print(f"[*] retrieving {name}")
-        bib_list = get_bib_list(url)
-        save_bib_list(bib_list, name)
+        get_bib_list(url)
+        save_bib_list(name)
         os.system(f"python bib2json.py -i raw_data/{name}.bib -o data/{name}.bib.json")
         with open('bib_list.txt', 'a') as f:
             f.write(f"data/{name}.bib.json\n")
