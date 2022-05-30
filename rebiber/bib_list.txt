@@ -425,3 +425,7 @@ data/eccv2020-w6.bib.json
 data/icra2021.bib.json
 data/icra2020.bib.json
 data/icra2019.bib.json
+data/cvprw2017.bib.json
+data/iros2019.bib.json
+data/iros2020.bib.json
+data/iros2021.bib.json

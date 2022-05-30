@@ -114,6 +114,9 @@ if __name__ == "__main__":
 
     for name, url in urls.items():
         print(f"[*] retrieving {name}")
+        if os.path.exists(f'data/{name}.bib.json'):
+            print(f"[*] {name} already exists skipping.")
+            continue
         get_bib_list(url)
         save_bib_list(name)
         os.system(f"python bib2json.py -i raw_data/{name}.bib -o data/{name}.bib.json")
